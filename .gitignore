@@ -1,0 +1,10 @@
+__pycache__/
+
+data/
+build/
+dist/
+
+config/config.json
+data/fanqie_web/state.json
+
+Fanqie-Publish-Sync-Assistant.spec
