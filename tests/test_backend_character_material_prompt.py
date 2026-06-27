@@ -53,3 +53,28 @@ def test_character_material_split_file_name_does_not_repeat_chapter_number(tmp_p
     assert index[0].chapter_title == "第238章 劝师姐遵从本心"
     assert (project_dir / file_names[0]).read_text(encoding="utf-8").startswith("第238章 劝师姐遵从本心")
 
+
+
+def test_character_material_prompt_filters_low_value_short_replies() -> None:
+    prompt = build_character_material_system_prompt()
+    user_prompt = build_character_material_user_prompt("【甲：同意！】\n【乙：同意！】", keyword="商业互吹")
+
+    assert "不要提取低信息量水句" in prompt
+    assert "不要按每个说话人拆成多条重复素材" in user_prompt
+
+
+def test_character_material_low_value_content_filter() -> None:
+    from backend.adapters.character_material.character_material_service import _is_low_value_content
+
+    assert _is_low_value_content("同意！") is True
+    assert _is_low_value_content("？？？") is True
+    assert _is_low_value_content("我看未必。") is False
+    assert _is_low_value_content("有其师必有其徒。") is False
+
+
+def test_character_material_bool_payload_accepts_string_false() -> None:
+    from backend.adapters.character_material.character_material_service import _optional_bool
+
+    assert _optional_bool("false", True) is False
+    assert _optional_bool("0", True) is False
+    assert _optional_bool("true", False) is True

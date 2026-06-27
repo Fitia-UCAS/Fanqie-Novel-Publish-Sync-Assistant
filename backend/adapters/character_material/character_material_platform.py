@@ -23,7 +23,7 @@ class CharacterMaterialPlatform:
             "base_url_env": "DEEPSEEK_BASE_URL",
             "model_env": "DEEPSEEK_MODEL_NAME",
             "default_base_url": "https://api.deepseek.com",
-            "default_model": "deepseek-chat",
+            "default_model": "deepseek-v4-flash",
             "description": "DeepSeek AI 平台",
         },
         "openai": {

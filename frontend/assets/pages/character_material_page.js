@@ -23,7 +23,7 @@ window.renderCharacterMaterialPage = function renderCharacterMaterialPage(app) {
               <div class="field"><label>API Key</label><input class="input" id="cmApiKey" type="password" value="${app.attr(cfg.apiKey || '')}" placeholder="可留空，读取环境变量" /></div>
               <div class="field"><label>Base URL</label><input class="input" id="cmBaseUrl" value="${app.attr(baseUrl)}" placeholder="OpenAI 兼容接口地址" /></div>
               <div class="field-pair">
-                <div class="field"><label>模型名称</label><input class="input" id="cmModelName" value="${app.attr(modelName)}" placeholder="deepseek-chat / gpt-4o-mini" /></div>
+                <div class="field"><label>模型名称</label><input class="input" id="cmModelName" value="${app.attr(modelName)}" placeholder="deepseek-v4-flash / gpt-4o-mini" /></div>
                 <div class="field"><label>温度</label><input class="input" id="cmTemperature" type="number" min="0" max="2" step="0.1" value="${app.attr(cfg.temperature ?? 0.2)}" /></div>
               </div>
               <div class="field-pair">

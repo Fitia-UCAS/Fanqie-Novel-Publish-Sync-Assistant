@@ -61,9 +61,9 @@ class CharacterMaterialService:
         chapter = _optional_int(payload.get("chapter"))
         start = _optional_int(payload.get("start"))
         end = _optional_int(payload.get("end"))
-        all_chapters = bool(payload.get("allChapters", True))
+        all_chapters = _optional_bool(payload.get("allChapters"), True)
         max_workers = max(1, _optional_int(payload.get("maxWorkers")) or 4)
-        concurrent = bool(payload.get("concurrent", True)) and max_workers > 1
+        concurrent = _optional_bool(payload.get("concurrent"), True) and max_workers > 1
         character_target = _clean_text(payload.get("characterTarget"))
         keyword = _clean_text(payload.get("keyword"))
 
@@ -103,6 +103,12 @@ class CharacterMaterialService:
             keyword=keyword,
         )
         materials = sorted(materials, key=lambda item: (item.chapter_index, item.item_index))
+        hit_chapters = {item.chapter_index for item in materials}
+        skipped_count = max(0, len(chapter_tasks) - len(hit_chapters))
+        callbacks.emit_log(
+            f"汇总：选中 {len(chapter_tasks)} 章，命中 {len(hit_chapters)} 章，跳过 {skipped_count} 章，共抽取 {len(materials)} 条。",
+            "info",
+        )
         output_path = self._resolve_output_path(payload, chapters[0].meta.novel_name, metas[0].chapter_index, metas[-1].chapter_index)
         write_jsonl(output_path, [item.to_dict(include_source_text=False) for item in materials])
         stats = build_material_stats(materials)
@@ -148,9 +154,10 @@ class CharacterMaterialService:
                 if callbacks.stop_requested():
                     callbacks.emit_log("停止：已收到停止请求。", "warning")
                     break
-                results.extend(self._extract_chapter(chapter, client, character_target=character_target, keyword=keyword))
+                chapter_materials = self._extract_chapter(chapter, client, character_target=character_target, keyword=keyword)
+                results.extend(chapter_materials)
                 callbacks.emit_progress(index, len(chapters))
-                callbacks.emit_log(f"完成：第 {chapter.chapter_index} 章", "info")
+                self._emit_chapter_result_log(callbacks, chapter, chapter_materials)
             return results
 
         results = []
@@ -168,8 +175,9 @@ class CharacterMaterialService:
                     break
                 completed += 1
                 try:
-                    results.extend(future.result())
-                    callbacks.emit_log(f"完成：第 {chapter.chapter_index} 章", "info")
+                    chapter_materials = future.result()
+                    results.extend(chapter_materials)
+                    self._emit_chapter_result_log(callbacks, chapter, chapter_materials)
                 except Exception as exc:
                     callbacks.emit_log(f"失败：第 {chapter.chapter_index} 章：{exc}", "error")
                 callbacks.emit_progress(completed, len(chapters))
@@ -193,6 +201,8 @@ class CharacterMaterialService:
             content = str(row.get("content", row.get("dialogue", ""))).strip()
             if not content_type or not content:
                 continue
+            if _is_low_value_content(content):
+                continue
             key = (character, content_type, content)
             if key in seen:
                 continue
@@ -212,6 +222,14 @@ class CharacterMaterialService:
                 )
             )
         return materials
+
+
+    @staticmethod
+    def _emit_chapter_result_log(callbacks: TaskCallbacks, chapter: CharacterTextChunk, materials: list[CharacterMaterial]) -> None:
+        if materials:
+            callbacks.emit_log(f"完成：第 {chapter.chapter_index} 章，抽取 {len(materials)} 条", "info")
+        else:
+            callbacks.emit_log(f"跳过：第 {chapter.chapter_index} 章，无匹配素材", "info")
 
     def _resolve_output_path(self, payload: dict[str, Any], novel_name: str, start: int | None, end: int | None) -> Path:
         raw_output = str(payload.get("outputFile") or "").strip()
@@ -241,3 +259,70 @@ def _optional_int(value: Any) -> int | None:
         return int(value)
     except Exception:
         return None
+
+
+def _optional_bool(value: Any, default: bool = False) -> bool:
+    if value is None or value == "":
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value != 0
+    text = str(value).strip().lower()
+    if text in {"1", "true", "yes", "y", "on", "checked", "是", "真", "开启"}:
+        return True
+    if text in {"0", "false", "no", "n", "off", "unchecked", "否", "假", "关闭"}:
+        return False
+    return default
+
+
+_LOW_VALUE_NORMALIZED_CONTENTS = {
+    "1",
+    "+1",
+    "啊",
+    "哦",
+    "噢",
+    "嗯",
+    "呃",
+    "好",
+    "是",
+    "对",
+    "行",
+    "可",
+    "同意",
+    "赞成",
+    "附议",
+    "没错",
+    "是的",
+    "就是",
+    "哈哈",
+    "哈哈哈",
+    "呵呵",
+    "嘿嘿",
+    "嘻嘻",
+    "卧槽",
+    "？？",
+    "！！",
+    "??",
+    "!!",
+}
+
+
+def _is_low_value_content(content: str) -> bool:
+    text = str(content or "").strip()
+    if not text:
+        return True
+    normalized = _normalize_low_value_text(text)
+    if not normalized:
+        return all(ch in _LOW_VALUE_PUNCTUATION for ch in text)
+    if normalized in _LOW_VALUE_NORMALIZED_CONTENTS:
+        return True
+    # 只由感叹号、问号、省略号等组成的水句没有角色素材价值。
+    return all(ch in "?!？！。…~～" for ch in normalized)
+
+
+_LOW_VALUE_PUNCTUATION = " \t\r\n。，、,.：:；;！!？?‘’'\"“”【】[]（）()《》<>「」『』—_-～~·…"
+
+
+def _normalize_low_value_text(value: str) -> str:
+    return "".join(ch for ch in str(value or "").strip() if ch not in _LOW_VALUE_PUNCTUATION)
