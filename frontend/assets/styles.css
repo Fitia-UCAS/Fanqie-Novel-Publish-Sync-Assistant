@@ -644,3 +644,59 @@ button:disabled { opacity: .52; cursor: not-allowed; transform: none !important;
   line-height: 1.75;
   user-select: text;
 }
+
+/* 当前剧情页：更紧凑的表单布局，去掉长说明文字后的专用样式 */
+.current-plot-form { gap: 15px; }
+.cp-section-title {
+  margin-top: 2px;
+  padding-top: 12px;
+  border-top: 1px solid #eef2f7;
+  color: #0f172a;
+  font-size: var(--control-font-size);
+  font-weight: 900;
+  letter-spacing: .04em;
+}
+.cp-mode-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 9px;
+}
+.cp-mode-card,
+.cp-check-card {
+  min-height: var(--control-height);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 13px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: var(--control-font-size);
+  font-weight: var(--control-font-weight);
+  line-height: 1.25;
+  cursor: pointer;
+  user-select: none;
+}
+.cp-mode-card:hover,
+.cp-check-card:hover { border-color: #bfdbfe; background: #fff; }
+.cp-mode-card input,
+.cp-check-card input {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  accent-color: rgb(var(--accent-600));
+}
+.cp-mode-card span,
+.cp-check-card span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cp-mode-card:has(input:checked),
+.cp-check-card:has(input:checked) {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: rgb(var(--accent-700));
+}

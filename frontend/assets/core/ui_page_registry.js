@@ -6,6 +6,7 @@
       process_novel: ['处理', '小说处理'],
       web_crawler: ['抓取', '网页抓取'],
       character_material: ['角色', '角色素材'],
+      current_plot: ['剧情', '当前剧情'],
     },
     defaultPage: 'auto_publish',
   };

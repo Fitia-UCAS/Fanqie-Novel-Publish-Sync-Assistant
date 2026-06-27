@@ -25,6 +25,7 @@ def test_frontend_page_files_use_page_object_names() -> None:
         "fanqie_syncer_page",
         "novel_crawler_page",
         "character_material_page",
+        "current_plot_page",
     }
     assert {path.stem for path in page_dir.glob("*.js")} == expected_pages
 

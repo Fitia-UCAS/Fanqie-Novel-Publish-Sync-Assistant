@@ -26,6 +26,7 @@ from backend.shared.task.task_registry import TaskRegistry
 from backend.api.desktop_api import open_file, open_native_dialog, open_path
 from backend.adapters.novel_crawler.crawler_service import NovelCrawlerService
 from backend.adapters.character_material import CharacterMaterialService
+from backend.adapters.current_plot import CurrentPlotService
 from backend.api.frontend_api import FrontendBridge
 
 LOGGER = get_logger(__name__)
@@ -39,6 +40,8 @@ class WebviewApi:
         self._tasks = TaskRegistry()
         self._bridge = FrontendBridge()
         self._character_material = CharacterMaterialService()
+        self._current_plot = CurrentPlotService()
+        self._latest_task_logs: dict[str, str] = {}
 
     def bind_window(self, window: Any) -> None:
         self._window = window
@@ -53,6 +56,8 @@ class WebviewApi:
             "crawlNovelSites": NovelCrawlerService.sites(),
             "characterMaterialPlatforms": self._character_material.platforms(),
             "characterMaterialDefaults": {key: self._character_material.default_platform_values(key) for key in self._character_material.platforms()},
+            "currentPlotPlatforms": self._current_plot.platforms(),
+            "currentPlotDefaults": {key: self._current_plot.default_platform_values(key) for key in self._current_plot.platforms()},
             "adProfiles": ad_profiles(),
             "logTail": self._read_log_tail(),
         }
@@ -84,6 +89,9 @@ class WebviewApi:
 
     def open_log(self, page: str = "") -> bool:
         category = _log_category_for_page(page)
+        remembered = self._latest_task_logs.get(category)
+        if remembered and Path(remembered).exists():
+            return open_file(remembered, create=True)
         return open_file(str(latest_log_file(category)), create=True)
 
     def open_backup(self, path: str = "") -> bool:
@@ -211,6 +219,35 @@ class WebviewApi:
     def character_material_stop(self) -> bool:
         return self._stop_task("character_material", "character_material", "已请求停止抽取，当前章节结束后会停下。")
 
+    def current_plot_platform_defaults(self, platform: str = "deepseek") -> dict[str, Any]:
+        try:
+            values = self._current_plot.default_platform_values(platform)
+            return {"ok": True, **values}
+        except Exception as exc:
+            return {"ok": False, "message": str(exc)}
+
+    def current_plot_list(self, source: str) -> dict[str, Any]:
+        try:
+            return {"ok": True, "message": "章节索引已读取。", "table": self._current_plot.list_chapters(source)}
+        except Exception as exc:
+            return {"ok": False, "message": str(exc)}
+
+    def current_plot_run(self, payload: dict[str, Any]) -> bool:
+        def worker(callbacks: TaskCallbacks) -> TaskResult | dict[str, Any]:
+            result = self._current_plot.update(payload, callbacks)
+            return TaskResult(
+                ok=True,
+                message=f"当前剧情更新完成：{result.output_path}",
+                path=result.output_path,
+                result_kind="output_file",
+                data=result.to_dict(),
+            )
+
+        return self._start_task("current_plot", "current_plot", worker)
+
+    def current_plot_stop(self) -> bool:
+        return self._stop_task("current_plot", "current_plot", "已请求停止总结，当前章节结束后会停下。")
+
     def auto_publish_stop(self) -> bool:
         return self._stop_task("auto_publish", "auto_publish", "已请求停止发布，当前章节结束后会停下。")
 
@@ -243,8 +280,10 @@ class WebviewApi:
         return True
 
     def _run_worker(self, task_name: str, page: str, worker: Callable[[TaskCallbacks], TaskResult | dict[str, Any]]) -> None:
-        log_path = None if page in {"auto_publish", "chapter_sync", "web_crawler"} else task_log_file(_log_category_for_page(page))
+        category = _log_category_for_page(page)
+        log_path = None if page in {"auto_publish", "chapter_sync", "web_crawler"} else task_log_file(category)
         if log_path:
+            self._latest_task_logs[category] = str(log_path)
             self._write_task_log(log_path, f"任务：{task_name}\n开始：{datetime.now():%Y-%m-%d %H:%M:%S}\n")
 
         def emit_log(message: str, level: str = "info") -> None:
@@ -306,6 +345,7 @@ def _log_category_for_page(page: str) -> str:
         "chapter_sync": "chapter_sync",
         "web_crawler": "web_crawler",
         "character_material": "character_material",
+        "current_plot": "current_plot",
         "process_novel": "process_novel",
         "process_novel_batch": "process_novel",
         "clean_text_ads": "process_novel",

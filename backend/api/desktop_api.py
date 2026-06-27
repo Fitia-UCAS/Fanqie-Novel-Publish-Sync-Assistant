@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 import os
 import subprocess
 import sys
@@ -11,6 +10,8 @@ from backend.shared.app.app_logging import get_logger
 from backend.shared.app.app_paths import get_state_paths
 
 LOGGER = get_logger(__name__)
+
+SUPPORTED_TEXT_SUFFIXES = {".txt", ".md"}
 
 
 def open_path(path_key: str) -> bool:
@@ -80,36 +81,48 @@ def open_native_dialog(window: Any, *, save: bool, folder: bool, save_filename: 
             result = window.create_file_dialog(
                 _file_dialog_type(webview, "SAVE"),
                 save_filename=save_filename or "output.txt",
-                file_types=("Text files (*.txt)", "All files (*.*)"),
+                file_types=_dialog_file_types(save_filename),
             )
         else:
             result = window.create_file_dialog(
                 _file_dialog_type(webview, "OPEN"),
                 allow_multiple=False,
-                file_types=("Text files (*.txt)", "All files (*.*)"),
+                file_types=_dialog_file_types(save_filename),
             )
     except Exception:
         LOGGER.exception("Native file dialog failed")
         return ""
+
     normalized = _normalize_dialog_result(result)
     if save and normalized:
-        normalized = _ensure_txt_file_path(normalized)
+        normalized = _ensure_text_file_path(normalized, save_filename)
         try:
             target = Path(normalized).expanduser()
             target.parent.mkdir(parents=True, exist_ok=True)
             target.touch(exist_ok=True)
         except Exception:
-            LOGGER.exception("Create selected TXT failed: %s", normalized)
+            LOGGER.exception("Create selected text file failed: %s", normalized)
     return normalized
 
 
+def _dialog_file_types(save_filename: str = "") -> tuple[str, ...]:
+    suffix = Path(save_filename or "").suffix.lower()
+    if suffix == ".md":
+        return ("Markdown files (*.md)", "Text files (*.txt)", "All files (*.*)")
+    return ("Text files (*.txt)", "Markdown files (*.md)", "All files (*.*)")
 
 
-def _ensure_txt_file_path(path: str) -> str:
+def _ensure_text_file_path(path: str, save_filename: str = "output.txt") -> str:
     target = Path(path).expanduser()
-    if target.suffix.lower() != ".txt":
-        target = target.with_suffix(".txt")
-    return str(target)
+    if target.suffix.lower() in SUPPORTED_TEXT_SUFFIXES:
+        return str(target)
+
+    default_suffix = Path(save_filename or "").suffix.lower()
+    if default_suffix not in SUPPORTED_TEXT_SUFFIXES:
+        default_suffix = ".txt"
+
+    return str(target.with_suffix(default_suffix))
+
 
 def _file_dialog_type(webview: Any, name: str) -> Any:
     file_dialog = getattr(webview, "FileDialog", None)
@@ -122,5 +135,3 @@ def _normalize_dialog_result(result: Any) -> str:
     if isinstance(result, (list, tuple)):
         return str(result[0]) if result else ""
     return str(result or "")
-
-

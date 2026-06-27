@@ -16,6 +16,7 @@
       chapter_sync: [],
       web_crawler: [],
       character_material: [],
+      current_plot: [],
     },
     logAliases: {},
     lastOutputs: {},
@@ -27,7 +28,7 @@
     resultTexts: {},
     saveTimer: null,
     statusOnlyPages: ['auto_publish', 'chapter_sync', 'web_crawler'],
-    loglessPages: ['auto_publish', 'chapter_sync', 'novel_splitter', 'process_novel_batch', 'clean_text_ads', 'clean_text_breaks', 'character_material'],
+    loglessPages: ['auto_publish', 'chapter_sync', 'novel_splitter', 'process_novel_batch', 'clean_text_ads', 'clean_text_breaks', 'character_material', 'current_plot'],
 
     isStatusOnlyPage(page) { const targetPage = this.logAliases[page] || page; return this.statusOnlyPages.includes(targetPage); },
     isLoglessPage(page) { const targetPage = this.logAliases[page] || page; return this.loglessPages.includes(targetPage); },
@@ -58,6 +59,7 @@
     ...window.NovelCrawlerOutputMethods,
     ...window.NovelSplitterMethods,
     ...window.NovelCharacterMaterialMethods,
+    ...window.NovelCurrentPlotMethods,
     setConfigValue(path, value) {
       if (!path) return;
       const parts = String(path).split('.').filter(Boolean);
@@ -86,6 +88,8 @@
           this.state.config.web_crawler = this.collectCrawlerConfig();
         } else if (page === 'character_material') {
           this.state.config.character_material = this.collectCharacterMaterialConfig();
+        } else if (page === 'current_plot') {
+          this.state.config.current_plot = this.collectCurrentPlotConfig();
         }
         this.state.config.activePage = this.currentPage;
         await this.api.save_config(this.state.config);
@@ -166,6 +170,7 @@
             chapter_sync: [],
             web_crawler: [],
             character_material: [],
+            current_plot: [],
           };
           this.lastOutputs = {};
           this.lastBackups = {};
@@ -230,6 +235,7 @@
         chapter_sync: window.renderFanqieSyncerPage,
         web_crawler: window.renderNovelCrawlerPage,
         character_material: window.renderCharacterMaterialPage,
+        current_plot: window.renderCurrentPlotPage,
       }[this.currentPage] || window.renderNovelProcessorPage;
       document.getElementById('pageHost').innerHTML = renderer(this);
       this.bindPage(this.currentPage);
@@ -248,6 +254,7 @@
       if (page === 'chapter_sync') this.bindChapterSyncPage();
       if (page === 'web_crawler') this.bindWebCrawlerPage();
       if (page === 'character_material') this.bindCharacterMaterialPage();
+      if (page === 'current_plot') this.bindCurrentPlotPage();
       this.bindFormAutosave(page);
     },
 

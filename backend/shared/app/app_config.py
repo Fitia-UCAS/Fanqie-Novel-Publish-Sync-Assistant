@@ -8,8 +8,6 @@ from typing import Any
 
 from backend.shared.app.app_paths import CONFIG_FILE, LEGACY_CONFIG_FILE, ensure_data_directories
 
-CONFIG_VERSION = 6
-
 LEGACY_CONFIG_SECTIONS: dict[str, str] = {
     "extract_novel": "process_novel",
     "auto_publish_chapters": "auto_publish",
@@ -18,7 +16,6 @@ LEGACY_CONFIG_SECTIONS: dict[str, str] = {
 }
 
 DEFAULT_CONFIG: dict[str, Any] = {
-    "version": CONFIG_VERSION,
     "activePage": "auto_publish",
     "process_novel": {
         "novelFile": "",
@@ -101,6 +98,27 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "concurrent": True,
         "maxWorkers": 4,
     },
+    "current_plot": {
+        "source": "",
+        "currentPlotFile": "",
+        "outputDir": "",
+        "outputFile": "",
+        "platform": "deepseek",
+        "apiKey": "",
+        "baseUrl": "",
+        "modelName": "",
+        "temperature": 0.2,
+        "chapter": "",
+        "aroundChapter": "",
+        "start": "",
+        "end": "",
+        "scope": "range",
+        "mode": "extract_merge",
+        "targetWords": 260,
+        "recentContextCount": 5,
+        "replaceExisting": True,
+        "maxWorkers": 4,
+    },
 }
 
 
@@ -167,7 +185,6 @@ def _merge_default(data: dict[str, Any]) -> dict[str, Any]:
     config = deepcopy(DEFAULT_CONFIG)
     deep_update(config, migrated)
     _remove_unknown_config_keys(config, DEFAULT_CONFIG)
-    config["version"] = CONFIG_VERSION
     return config
 
 
