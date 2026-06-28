@@ -17,6 +17,7 @@
       web_crawler: [],
       character_material: [],
       current_plot: [],
+      webnovel_writer: [],
     },
     logAliases: {},
     lastOutputs: {},
@@ -27,8 +28,8 @@
     activeResultModes: {},
     resultTexts: {},
     saveTimer: null,
-    statusOnlyPages: ['auto_publish', 'chapter_sync', 'web_crawler'],
-    loglessPages: ['auto_publish', 'chapter_sync', 'novel_splitter', 'process_novel_batch', 'clean_text_ads', 'clean_text_breaks', 'character_material', 'current_plot'],
+    statusOnlyPages: ['auto_publish', 'chapter_sync', 'web_crawler', 'webnovel_writer'],
+    loglessPages: ['auto_publish', 'chapter_sync', 'novel_splitter', 'process_novel_batch', 'clean_text_ads', 'clean_text_breaks', 'character_material', 'current_plot', 'webnovel_writer'],
 
     isStatusOnlyPage(page) { const targetPage = this.logAliases[page] || page; return this.statusOnlyPages.includes(targetPage); },
     isLoglessPage(page) { const targetPage = this.logAliases[page] || page; return this.loglessPages.includes(targetPage); },
@@ -60,6 +61,7 @@
     ...window.NovelSplitterMethods,
     ...window.NovelCharacterMaterialMethods,
     ...window.NovelCurrentPlotMethods,
+    ...window.NovelWebnovelWriterMethods,
     setConfigValue(path, value) {
       if (!path) return;
       const parts = String(path).split('.').filter(Boolean);
@@ -90,6 +92,8 @@
           this.state.config.character_material = this.collectCharacterMaterialConfig();
         } else if (page === 'current_plot') {
           this.state.config.current_plot = this.collectCurrentPlotConfig();
+        } else if (page === 'webnovel_writer') {
+          this.state.config.webnovel_writer = this.collectWebnovelWriterConfig();
         }
         this.state.config.activePage = this.currentPage;
         await this.api.save_config(this.state.config);
@@ -171,6 +175,7 @@
             web_crawler: [],
             character_material: [],
             current_plot: [],
+            webnovel_writer: [],
           };
           this.lastOutputs = {};
           this.lastBackups = {};
@@ -180,7 +185,7 @@
           this.activeResultModes = {};
           this.resultTexts = {};
           this.render();
-          this.setHeaderStatus(result && result.ok ? 'data 已重建' : '重建失败', result && result.ok ? 'ready' : 'error');
+          this.setHeaderStatus(result && result.ok ? '数据已重建' : '重建失败', result && result.ok ? 'ready' : 'error');
         } catch (error) {
           console.debug('reset data failed', error);
           this.setHeaderStatus('重建失败', 'error');
@@ -236,6 +241,7 @@
         web_crawler: window.renderNovelCrawlerPage,
         character_material: window.renderCharacterMaterialPage,
         current_plot: window.renderCurrentPlotPage,
+        webnovel_writer: window.renderWebnovelWriterPage,
       }[this.currentPage] || window.renderNovelProcessorPage;
       document.getElementById('pageHost').innerHTML = renderer(this);
       this.bindPage(this.currentPage);
@@ -255,6 +261,7 @@
       if (page === 'web_crawler') this.bindWebCrawlerPage();
       if (page === 'character_material') this.bindCharacterMaterialPage();
       if (page === 'current_plot') this.bindCurrentPlotPage();
+      if (page === 'webnovel_writer') this.bindWebnovelWriterPage();
       this.bindFormAutosave(page);
     },
 

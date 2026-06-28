@@ -7,7 +7,8 @@
       web_crawler: ['抓取', '网页抓取'],
       character_material: ['角色', '角色素材'],
       current_plot: ['剧情', '当前剧情'],
+      webnovel_writer: ['写作', '网文写作'],
     },
-    defaultPage: 'auto_publish',
+    defaultPage: 'process_novel',
   };
 })();

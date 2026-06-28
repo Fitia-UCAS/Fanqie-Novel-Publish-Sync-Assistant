@@ -3,16 +3,21 @@
     renderTerminalPanel(page) {
       const statusOnly = this.isStatusOnlyPage(page);
       const logless = this.isLoglessPage(page);
-      return `<div class="terminal-card ${statusOnly ? 'status-panel' : ''} ${logless ? 'logless-panel' : ''}">
-        <div class="terminal-head">
-          <div class="terminal-dots"><i></i><i></i><i></i></div>
-          <b>${statusOnly ? '任务进度' : '任务进度'}</b>
-          <div class="terminal-actions">
-            <button class="terminal-clear" data-clear-output="${this.attr(page)}" type="button">清空</button>
+      const isWebnovel = (this.logAliases[page] || page) === 'webnovel_writer';
+      const actions = isWebnovel
+        ? `<button class="terminal-open-log" data-open-log="${this.attr(page)}" type="button">打开日志</button>
+            <button class="terminal-open" data-open-output="${this.attr(page)}" type="button">打开目录</button>`
+        : `<button class="terminal-clear" data-clear-output="${this.attr(page)}" type="button">清空</button>
             <button class="terminal-copy" data-copy-output="${this.attr(page)}" type="button">复制</button>
             <button class="terminal-open-log" data-open-log="${this.attr(page)}" type="button">打开日志</button>
             <button class="terminal-open-backup" data-open-backup="${this.attr(page)}" type="button">打开备份</button>
-            <button class="terminal-open" data-open-output="${this.attr(page)}" type="button">打开目录</button>
+            <button class="terminal-open" data-open-output="${this.attr(page)}" type="button">打开目录</button>`;
+      return `<div class="terminal-card ${statusOnly ? 'status-panel' : ''} ${logless ? 'logless-panel' : ''}">
+        <div class="terminal-head">
+          <div class="terminal-dots"><i></i><i></i><i></i></div>
+          <b>任务进度</b>
+          <div class="terminal-actions">
+            ${actions}
           </div>
         </div>
         <div class="terminal-progress" id="${this.attr(page)}ProgressWrap">
@@ -39,6 +44,7 @@
         chapter_sync: 'fanqie_syncer',
         character_material: 'character_material',
         current_plot: 'current_plot',
+        webnovel_writer: 'webnovel_writer',
       };
       if (featureRootPages[page]) return this.statePath(featureRootPages[page]);
       if (page === 'web_crawler') return document.getElementById('nsOutput')?.value || this.lastOutputs.web_crawler || this.statePath('web_crawler_outputs');
@@ -70,6 +76,7 @@
       if (this.taskStore) this.taskStore.begin(targetPage, message || '任务启动中...');
       this.setProgress(targetPage, 0, 1);
       this.setTaskStatus(targetPage, message || '任务启动中...', 'info');
+      this.setTaskSummary(targetPage, '暂无', 'info');
       const box = document.getElementById(`${targetPage}Log`);
       if (box) {
         box.innerHTML = '';
@@ -84,9 +91,18 @@
       this.renderTaskMetrics(targetPage);
       const node = document.getElementById(`${targetPage}Status`);
       if (node) {
-        node.className = `terminal-status ${level === 'warning' ? 'warn' : level}`;
+        const cssLevel = level === 'warning' ? 'warn' : level;
+        node.className = `terminal-status ${cssLevel}`;
         node.textContent = text;
       }
+      if (targetPage === this.currentPage) {
+        const headerLevel = level === 'error' ? 'error' : (level === 'success' ? 'ready' : 'busy');
+        const headerText = level === 'error' ? '任务失败' : (level === 'success' ? '任务完成' : '任务运行中');
+        this.setHeaderStatus(headerText, headerLevel);
+      }
+    },
+    setTaskSummary(page, summary, level = 'info') {
+      // 右侧面板不再显示“最近结果”；任务详情写入日志文件，动态栏显示当前状态。
     },
     conciseTaskMessage(message, page = '') {
       const text = String(message || '').trim();
@@ -177,7 +193,8 @@
       const statusNode = document.getElementById(`${page}Status`);
       if (statusNode) {
         statusNode.textContent = status?.message || '等待执行';
-        statusNode.className = `terminal-status ${status?.level || 'info'}`;
+        const cssLevel = status?.level === 'warning' ? 'warn' : (status?.level || 'info');
+        statusNode.className = `terminal-status ${cssLevel}`;
       }
       const progress = this.progressState[page];
       if (progress) this.setProgress(page, progress.current, progress.total);
@@ -206,6 +223,7 @@
       if (this.taskStore) this.taskStore.begin(page, '等待执行');
       this.setProgress(page, 0, 0);
       this.setTaskStatus(page, '等待执行', 'info');
+      this.setTaskSummary(page, '暂无', 'info');
       const box = document.getElementById(`${page}Log`);
       if (box) {
         box.classList.remove('result-text');
@@ -254,17 +272,19 @@
       const finalMessage = ok ? message : `${message}（详情见对应 tasklogs 目录）`;
       if (this.taskStore) this.taskStore.finish(targetPage, ok, finalMessage);
       this.setTaskStatus(targetPage, finalMessage, ok ? 'success' : 'error');
+      this.resultTexts[targetPage] = finalMessage;
+      this.setTaskSummary(targetPage, finalMessage, ok ? 'success' : 'error');
 
       const resultDisplayMode = result && result.resultDisplayMode ? String(result.resultDisplayMode) : '';
       const resultText = result && result.resultText ? String(result.resultText) : '';
-      if (ok && resultDisplayMode === 'chapter_text') {
+      if (targetPage !== 'webnovel_writer' && ok && resultDisplayMode === 'chapter_text') {
         this.activeResultModes[targetPage] = 'chapter_text';
         this.resultTexts[targetPage] = resultText;
         this.showResultText(targetPage, resultText);
         return;
       }
 
-      this.resultTexts[targetPage] = '';
+      if (targetPage !== 'webnovel_writer') this.resultTexts[targetPage] = '';
       const box = document.getElementById(`${targetPage}Log`);
       if (box) {
         box.classList.remove('result-text');

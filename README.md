@@ -52,6 +52,9 @@ FANQIE Novel PUBLISH SYNC ASSISTANT | FANQIE Novel PUBLISHing
 FANQIE Novel PUBLISH SYNC ASSISTANT | Fanqie Syncing
 FANQIE Novel PUBLISH SYNC ASSISTANT | Novel Processing
 FANQIE Novel PUBLISH SYNC ASSISTANT | Web Crawling
+FANQIE Novel PUBLISH SYNC ASSISTANT | Character Material
+FANQIE Novel PUBLISH SYNC ASSISTANT | Current Plot
+FANQIE Novel PUBLISH SYNC ASSISTANT | Web Novel Writing
 ```
 
 More specifically:
@@ -60,6 +63,9 @@ More specifically:
 * **Fanqie Syncing**: compares local chapters with web chapters and catches differences when something does not match.
 * **Novel Processing**: organizes TXT files, detects chapters, formats text, and splits novels by chapter, chapter count, file size, or line count.
 * **Web Crawling**: fetches chapters, saves them as TXT, and cleans up the messy stuff along the way.
+* **Character Material**: organizes character materials and helps turn them into reusable prompt-ready notes.
+* **Current Plot**: manages current-plot context files so the next chapter can stay aligned with what is happening now.
+* **Web Novel Writing**: plans outlines, chapter blueprints, chapter drafting, review gates, and local story-state updates.
 
 That is pretty much it.
 
@@ -170,6 +176,9 @@ FANQIE Novel PUBLISH SYNC ASSISTANT | 番茄发布
 FANQIE Novel PUBLISH SYNC ASSISTANT | 番茄同步
 FANQIE Novel PUBLISH SYNC ASSISTANT | 小说处理
 FANQIE Novel PUBLISH SYNC ASSISTANT | 网页抓取
+FANQIE Novel PUBLISH SYNC ASSISTANT | 角色素材
+FANQIE Novel PUBLISH SYNC ASSISTANT | 当前剧情
+FANQIE Novel PUBLISH SYNC ASSISTANT | 网文写作
 ```
 
 至于更具体的？
@@ -178,6 +187,9 @@ FANQIE Novel PUBLISH SYNC ASSISTANT | 网页抓取
 * **番茄同步**：本地和网页章节对一对，不一致就揪出来。
 * **小说处理**：整理 TXT、识别章节、格式化文本、按章节/章节数/大小/行数分割小说。
 * **网页抓取**：抓章节、存 TXT、顺便清理一下乱七八糟的东西。
+* **角色素材**：整理角色资料，把人物设定转成更方便复用的提示词素材。
+* **当前剧情**：管理当前剧情上下文，让下一章能接得上前文正在发生的事。
+* **网文写作**：管理小说项目目录、小说 TXT、设定文件，并执行大纲、蓝图、写章、审查和状态回写流程。
 
 就这样。
 
